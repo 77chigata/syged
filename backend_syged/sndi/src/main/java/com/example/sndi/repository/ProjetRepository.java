@@ -6,6 +6,8 @@ import com.example.sndi.model.Projet;
 
 public interface ProjetRepository extends JpaRepository<Projet,Long>{
    
+ Projet findByNomProjet(String nomProjet);
+    
     
 
 }

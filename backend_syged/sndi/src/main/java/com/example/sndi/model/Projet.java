@@ -3,7 +3,7 @@ package com.example.sndi.model;
 import java.time.LocalDate;
 import java.util.List;
 
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -32,6 +32,7 @@ public class Projet {
     private String nomProjet;
     private LocalDate dateDebut;
     private LocalDate dateFin;
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "id_model")
     private Model model;

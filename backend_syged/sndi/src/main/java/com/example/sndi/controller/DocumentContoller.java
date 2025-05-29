@@ -41,7 +41,7 @@ public class DocumentContoller {
         // on va cherche le document par son ID
         return documentService.findById(id).map(document -> {
             // on va mettre à jour le nom avec la nouvelle valeur reçue
-            document.setNomDocument(details.getNomDocument());
+           
     
             // on sauvegarde les modifications grâce au service
             Document updated = documentService.save(document);

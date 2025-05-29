@@ -2,14 +2,17 @@ package com.example.sndi.model;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 import org.springframework.web.bind.annotation.SessionAttributes;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import lombok.AllArgsConstructor;
 
@@ -29,10 +32,15 @@ public class Document {
     private Long idDocument;
 
     private String nomDocument;
-    private String cheminFichier;
+
+    
+    @Lob
+    @Column
+    private Byte[] contenuFichier;
+
     private LocalDate dateDepot;
     
-    private byte[] data;
+  
     @ManyToOne
     @JoinColumn(name = "id_utilisateur")
     private Utilisateur utilisateur;
@@ -46,9 +54,6 @@ public class Document {
     @JoinColumn(name = "id_projet")
     private Projet projet;
 
-    public void setNomDocument(String nomDocument2) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'setNomDocument'");
-    }
+  
 
 }

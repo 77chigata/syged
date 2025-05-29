@@ -26,4 +26,8 @@ public class ProjetService {
     public Projet save(Projet projet){
         return projetRepository.save(projet);
     }
+
+    public Projet findByNomProjet(String nomProjet) {
+        return projetRepository.findByNomProjet(nomProjet);
+    }
 }
