@@ -33,12 +33,16 @@ public class DocumentService {
 
     @Transactional
     public Document save( Document document){
-
-       
         getThis().beforeSave(document);
         Projet projet= projetService.findByNomProjet(document.getProjet().getNomProjet());
         document.getProjet().setIdProjet(projet.getIdProjet());
         return documentRepository.save(document);
+    }
+
+    @Transactional
+    public Object process_document_request( Object payload){
+        System.out.println("Document request: " + payload);
+        return payload; // Placeholder for actual processing logic
     }
 
     public Optional<Document> findById(Long id) {
