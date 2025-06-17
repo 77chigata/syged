@@ -35,18 +35,15 @@ public class Document {
 
     private String nomDocument;
 
-    
     @Lob
     @Column
-    private Byte[] contenuFichier;
+    private byte[] contenuFichier;
 
     private LocalDate dateDepot;
-    
-  
+
     @ManyToOne
     @JoinColumn(name = "id_utilisateur")
     private Utilisateur utilisateur;
-
 
     @ManyToOne
     @JoinColumn(name = "id_type_document")
@@ -56,6 +53,9 @@ public class Document {
     @JoinColumn(name = "id_projet")
     private Projet projet;
 
-  
+    public String getId() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getId'");
+    }
 
 }

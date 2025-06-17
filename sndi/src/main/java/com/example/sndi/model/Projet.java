@@ -37,4 +37,9 @@ public class Projet {
     @JoinColumn(name = "id_model")
     private Model model;
 
+    public Long getId() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getId'");
+    }
+
 }

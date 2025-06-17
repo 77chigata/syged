@@ -2,6 +2,7 @@ package com.example.sndi.controller;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +25,7 @@ import com.example.sndi.repository.DepartementRepository;
 import com.example.sndi.repository.DocumentRepository;
 import com.example.sndi.service.DepartementService;
 import com.example.sndi.service.DocumentService;
+import com.example.sndi.service.ProjetService;
 
 import jakarta.annotation.security.PermitAll;
 
@@ -33,36 +35,49 @@ public class DocumentContoller {
 
     @Autowired
     private DocumentService documentService;
+    @Autowired
+    private ProjetService projetService;
 
     @PostMapping("/save")
     @PermitAll
     public ResponseEntity<Object> process_document_request(@RequestBody Map<String, Object> request) {
-        List<Map<String, Object>> champs = (List<Map<String, Object>>) request.get("document");
+        try {
+            // Récupération des champs du document
+            String nomProjet = (String) request.get("nomProjet");
+            String selectedType = (String) request.get("selectedType");
+            Map<String, Object> documentWrapper = (Map<String, Object>) request.get("document");
+            Map<String, Object> docMap = (Map<String, Object>) documentWrapper.get("rapport_stage");
 
-        List<Document> documents = new ArrayList<>();
-
-        for (Map<String, Object> champ : champs) {
+            // Création de l'objet Document
             Document doc = new Document();
+            doc.setNomDocument((String) docMap.get("nomFichier"));
 
-            doc.setNomDocument((String) champ.get("nomDocument"));
-            doc.setContenuFichier((Byte[]) champ.get("contenuFichier"));
-            doc.setDateDepot(LocalDate.parse((String) champ.get("dateDepot")));
+            // Conversion du contenu Base64 en tableau de bytes
+            String base64 = (String) docMap.get("contenuFichier");
+            byte[] contenuBytes = Base64.getDecoder().decode(base64);
+            doc.setContenuFichier(contenuBytes);
 
-            Map<String, Object> utilisateurMap = (Map<String, Object>) champ.get("utilisateur");
-            Utilisateur user = new Utilisateur();
-            user.setIdUtilisateur(Long.valueOf(utilisateurMap.get("idUtilisateur").toString()));
-            doc.setUtilisateur(user);
+            // Optionnel : ajouter une date
+            doc.setDateDepot(LocalDate.now());
 
-            Map<String, Object> projetMap = (Map<String, Object>) champ.get("projet");
+            // Création des objets associés
             Projet projet = new Projet();
-            projet.setNomProjet((String) (projetMap.get("nomProjet").toString()));
+            projet.setNomProjet(nomProjet);
             doc.setProjet(projet);
+            Projet savProjet = projetService.save(projet);
+            // TODO: Si tu as l'utilisateur en session ou à récupérer, fais-le ici
+            // doc.setUtilisateur(utilisateur);
 
+            List<Document> documents = new ArrayList<>();
             documents.add(doc);
-        }
+            doc.setProjet(savProjet);
+            documentService.save(doc);
 
-        // Traitement via service
-        return ResponseEntity.ok(documentService.process_document_request(documents));
+            return ResponseEntity.ok(documentService.process_document_request(documents));
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Erreur de traitement : " + e.getMessage());
+        }
     }
 
     @PutMapping("updated/{id}")
