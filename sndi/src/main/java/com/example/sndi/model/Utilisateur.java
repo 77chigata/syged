@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -51,7 +53,8 @@ public class Utilisateur {
     private Set<Role> roles = new HashSet<>();
 
     // ajouté
+    @JsonIgnore
     @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL)
-private List<Document> documents = new ArrayList<>();
+    private List<Document> documents = new ArrayList<>();
 
 }

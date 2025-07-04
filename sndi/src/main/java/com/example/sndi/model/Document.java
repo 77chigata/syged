@@ -6,6 +6,8 @@ import java.util.Set;
 
 import org.springframework.web.bind.annotation.SessionAttributes;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -42,6 +44,7 @@ public class Document {
     private LocalDate dateDepot;
 
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "id_utilisateur")
     private Utilisateur utilisateur;
 
@@ -52,10 +55,5 @@ public class Document {
     @ManyToOne
     @JoinColumn(name = "id_projet")
     private Projet projet;
-
-    public String getId() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getId'");
-    }
 
 }

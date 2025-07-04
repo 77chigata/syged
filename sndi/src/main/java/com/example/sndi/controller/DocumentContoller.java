@@ -38,44 +38,57 @@ public class DocumentContoller {
     @Autowired
     private ProjetService projetService;
 
+    @GetMapping("/all")
+    @PermitAll
+    public ResponseEntity<List<Document>> getAllDocuments() {
+        List<Document> documents = documentService.findAll();
+        return ResponseEntity.ok(documents);
+    }
+
     @PostMapping("/save")
     @PermitAll
     public ResponseEntity<Object> process_document_request(@RequestBody Map<String, Object> request) {
         try {
-            // Récupération des champs du document
+            // 1. Récupération des champs généraux
             String nomProjet = (String) request.get("nomProjet");
             String selectedType = (String) request.get("selectedType");
             Map<String, Object> documentWrapper = (Map<String, Object>) request.get("document");
-            Map<String, Object> docMap = (Map<String, Object>) documentWrapper.get("rapport_stage");
 
-            // Création de l'objet Document
-            Document doc = new Document();
-            doc.setNomDocument((String) docMap.get("nomFichier"));
-
-            // Conversion du contenu Base64 en tableau de bytes
-            String base64 = (String) docMap.get("contenuFichier");
-            byte[] contenuBytes = Base64.getDecoder().decode(base64);
-            doc.setContenuFichier(contenuBytes);
-
-            // Optionnel : ajouter une date
-            doc.setDateDepot(LocalDate.now());
-
-            // Création des objets associés
+            // 2. Création du projet associé
             Projet projet = new Projet();
             projet.setNomProjet(nomProjet);
-            doc.setProjet(projet);
-            Projet savProjet = projetService.save(projet);
-            // TODO: Si tu as l'utilisateur en session ou à récupérer, fais-le ici
-            // doc.setUtilisateur(utilisateur);
+            Projet savedProjet = projetService.save(projet);
 
+            // 3. Liste finale des documents à sauvegarder
             List<Document> documents = new ArrayList<>();
-            documents.add(doc);
-            doc.setProjet(savProjet);
-            documentService.save(doc);
+
+            // 4. Parcours dynamique des fichiers du documentWrapper
+            for (Map.Entry<String, Object> entry : documentWrapper.entrySet()) {
+                String documentType = entry.getKey(); // ex: "cahier_charge"
+                Map<String, Object> docMap = (Map<String, Object>) entry.getValue();
+
+                // Vérifie que le document est rempli
+                String nomFichier = (String) docMap.get("nomFichier");
+                String contenuBase64 = (String) docMap.get("contenuFichier");
+
+                if (nomFichier != null && contenuBase64 != null) {
+                    byte[] contenuBytes = Base64.getDecoder().decode(contenuBase64);
+
+                    Document doc = new Document();
+                    doc.setNomDocument(nomFichier);
+                    doc.setContenuFichier(contenuBytes);
+                    doc.setDateDepot(LocalDate.now());
+                    doc.setProjet(savedProjet); // Lien avec le projet
+
+                    documentService.save(doc);
+                    documents.add(doc);
+                }
+            }
 
             return ResponseEntity.ok(documentService.process_document_request(documents));
 
         } catch (Exception e) {
+            System.err.println("Erreur : " + e);
             return ResponseEntity.badRequest().body("Erreur de traitement : " + e.getMessage());
         }
     }
