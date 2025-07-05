@@ -26,6 +26,8 @@ import com.example.sndi.service.DepartementService;
 import com.example.sndi.service.DocumentService;
 
 import jakarta.annotation.security.PermitAll;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/document")
@@ -33,6 +35,13 @@ public class DocumentContoller {
 
     @Autowired
     private DocumentService documentService;
+
+
+    @GetMapping("/all")
+    public List<Document>findAllDocuments() {
+        return documentService.findAll();
+    }
+    
 
     @PostMapping("/save")
     @PermitAll

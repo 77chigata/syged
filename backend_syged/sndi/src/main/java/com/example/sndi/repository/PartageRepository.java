@@ -1,4 +1,10 @@
-package main.java.com.example.sndi.repository;
+package com.example.sndi.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.example.sndi.model.Partage;
+
+
 
 public interface PartageRepository extends JpaRepository <Partage,Long> {
     
