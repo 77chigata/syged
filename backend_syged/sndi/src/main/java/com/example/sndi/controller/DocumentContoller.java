@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,7 +29,6 @@ import com.example.sndi.service.DocumentService;
 import jakarta.annotation.security.PermitAll;
 import org.springframework.web.bind.annotation.RequestParam;
 
-
 @RestController
 @RequestMapping("/document")
 public class DocumentContoller {
@@ -36,42 +36,85 @@ public class DocumentContoller {
     @Autowired
     private DocumentService documentService;
 
-
     @GetMapping("/all")
-    public List<Document>findAllDocuments() {
+    public List<Document> findAllDocuments() {
         return documentService.findAll();
     }
-    
 
     @PostMapping("/save")
     @PermitAll
     public ResponseEntity<Object> process_document_request(@RequestBody Map<String, Object> request) {
-        List<Map<String, Object>> champs = (List<Map<String, Object>>) request.get("document");
+        try {
+            // Récupérer les objets principaux
+            Object documentObj = request.get("document");
+            Object utilisateurObj = request.get("utilisateur");
+            String nomProjet = (String) request.get("nomProjet");
+            String message = (String) request.get("message");
+            String selectedType = (String) request.get("selectedType");
 
-        List<Document> documents = new ArrayList<>();
+            // Validation des données requises
+            if (documentObj == null || !(documentObj instanceof Map)) {
+                return ResponseEntity.badRequest().body("Format de document invalide");
+            }
 
-        for (Map<String, Object> champ : champs) {
-            Document doc = new Document();
+            if (utilisateurObj == null) {
+                return ResponseEntity.badRequest().body("Utilisateur requis");
+            }
 
-            doc.setNomDocument((String) champ.get("nomDocument"));
-            doc.setContenuFichier((Byte[]) champ.get("contenuFichier"));
-            doc.setDateDepot(LocalDate.parse((String) champ.get("dateDepot")));
+            // Récupérer la map des documents
+            Map<String, Object> documentMap = (Map<String, Object>) documentObj;
 
-            Map<String, Object> utilisateurMap = (Map<String, Object>) champ.get("utilisateur");
-            Utilisateur user = new Utilisateur();
-            user.setIdUtilisateur(Long.valueOf(utilisateurMap.get("idUtilisateur").toString()));
-            doc.setUtilisateur(user);
+            List<Document> documents = new ArrayList<>();
 
-            Map<String, Object> projetMap = (Map<String, Object>) champ.get("projet");
-            Projet projet = new Projet();
-            projet.setNomProjet((String) (projetMap.get("nomProjet").toString()));
-            doc.setProjet(projet);
+            // Traiter chaque type de document
+            for (String typeDocument : documentMap.keySet()) {
+                Object docTypeObj = documentMap.get(typeDocument);
 
-            documents.add(doc);
+                if (docTypeObj instanceof Map) {
+                    Map<String, Object> docTypeMap = (Map<String, Object>) docTypeObj;
+
+                    String nomFichier = (String) docTypeMap.get("nomFichier");
+                    Object contenuFichier = docTypeMap.get("contenuFichier");
+
+                    // Créer un document seulement si des données existent
+                    if (nomFichier != null || contenuFichier != null) {
+                        Document doc = new Document();
+
+                        // Définir les propriétés du document
+                        doc.setNomDocument(nomFichier);
+
+                        doc.setContenuFichier((String) contenuFichier);
+                        doc.setDateDepot(LocalDate.now()); // Date actuelle
+
+                        // Récupérer et définir l'utilisateur
+                        Map<String, Object> utilisateurMap = (Map<String, Object>) utilisateurObj;
+                        Utilisateur user = new Utilisateur();
+                        user.setIdUtilisateur(Long.valueOf(utilisateurMap.get("idUtilisateur").toString()));
+                        doc.setUtilisateur(user);
+
+                        // Créer et définir le projet
+                        if (nomProjet != null && !nomProjet.trim().isEmpty()) {
+                            Projet projet = new Projet();
+                            projet.setNomProjet(nomProjet);
+                            doc.setProjet(projet);
+                        }
+                        documents.add(doc);
+                    }
+                }
+            }
+
+            // Vérifier qu'au moins un document a été traité
+            if (documents.isEmpty()) {
+                return ResponseEntity.badRequest().body("Aucun document valide à traiter");
+            }
+
+            // Traitement via service
+            return ResponseEntity.ok(documentService.process_document_request(documents));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erreur lors du traitement : " + e.getMessage());
         }
-
-        // Traitement via service
-        return ResponseEntity.ok(documentService.process_document_request(documents));
     }
 
     @PutMapping("updated/{id}")

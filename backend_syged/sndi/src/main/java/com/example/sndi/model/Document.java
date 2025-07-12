@@ -36,9 +36,9 @@ public class Document {
     private String nomDocument;
 
     
-    @Lob
+   
     @Column
-    private Byte[] contenuFichier;
+    private String contenuFichier;
 
     private LocalDate dateDepot;
     
