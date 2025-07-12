@@ -6,8 +6,6 @@ import java.util.Set;
 
 import org.springframework.web.bind.annotation.SessionAttributes;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -37,16 +35,20 @@ public class Document {
 
     private String nomDocument;
 
+    
     @Lob
     @Column
-    private byte[] contenuFichier;
+    private Byte[] contenuFichier;
 
     private LocalDate dateDepot;
-
+    
+    private String clesymetrique;
+    
+  
     @ManyToOne
-    @JsonIgnore
     @JoinColumn(name = "id_utilisateur")
     private Utilisateur utilisateur;
+
 
     @ManyToOne
     @JoinColumn(name = "id_type_document")
@@ -55,5 +57,7 @@ public class Document {
     @ManyToOne
     @JoinColumn(name = "id_projet")
     private Projet projet;
+
+  
 
 }

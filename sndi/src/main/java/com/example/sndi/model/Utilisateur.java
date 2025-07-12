@@ -39,6 +39,8 @@ public class Utilisateur {
     private String contact;
     private String email;
     private String motDePasse;
+    private String clePublique;
+    private String clePrivee;
 
     @ManyToOne
     @JoinColumn(name = "id_type_utilisateur")

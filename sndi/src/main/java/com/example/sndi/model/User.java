@@ -3,6 +3,7 @@ package com.example.sndi.model;
 import java.util.HashSet;
 import java.util.Set;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -43,4 +44,12 @@ public class User {
     @ManyToMany
     @JoinTable(name = "utilisateur_roles", joinColumns = @JoinColumn(name = "id_utilisateur"), inverseJoinColumns = @JoinColumn(name = "id_role"))
     private Set<Role> roles = new HashSet<>();
+
+    // Champs pour les clés asymétriques
+    @Column(name = "public_key", columnDefinition = "TEXT")
+    private String publicKey;
+
+    @Column(name = "private_key", columnDefinition = "TEXT")
+    private String privateKey;
+
 }

@@ -1,5 +1,7 @@
 package com.example.sndi.model;
 
+import java.time.LocalDate;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -13,17 +15,16 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Commentaire {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idCommantaire;
 
     private String detailCommentaire;
-
+    private LocalDate dateCommentaire;
     @ManyToOne
     @JoinColumn(name = "idDocument")
     private Document document;
-
 
     @ManyToOne
     @JoinColumn(name = "idUtilisateur")

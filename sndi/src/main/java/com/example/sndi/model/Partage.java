@@ -1,5 +1,7 @@
 package com.example.sndi.model;
 
+import java.time.LocalDate;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -13,13 +15,14 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Partage {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long codePartage;
 
     private String message;
-
+    private LocalDate datePartage;
+    private String cleSymetrique;
     @ManyToOne
     @JoinColumn(name = "IdDestinataire")
     private Utilisateur Destinataire;
@@ -31,5 +34,5 @@ public class Partage {
     @ManyToOne
     @JoinColumn(name = "IdDocument")
     private Document document;
-    
+
 }

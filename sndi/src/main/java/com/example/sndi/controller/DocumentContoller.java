@@ -2,7 +2,6 @@ package com.example.sndi.controller;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -25,9 +24,9 @@ import com.example.sndi.repository.DepartementRepository;
 import com.example.sndi.repository.DocumentRepository;
 import com.example.sndi.service.DepartementService;
 import com.example.sndi.service.DocumentService;
-import com.example.sndi.service.ProjetService;
 
 import jakarta.annotation.security.PermitAll;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/document")
@@ -35,62 +34,41 @@ public class DocumentContoller {
 
     @Autowired
     private DocumentService documentService;
-    @Autowired
-    private ProjetService projetService;
 
     @GetMapping("/all")
-    @PermitAll
-    public ResponseEntity<List<Document>> getAllDocuments() {
-        List<Document> documents = documentService.findAll();
-        return ResponseEntity.ok(documents);
+    public List<Document> findAllDocuments() {
+        return documentService.findAll();
     }
 
     @PostMapping("/save")
     @PermitAll
     public ResponseEntity<Object> process_document_request(@RequestBody Map<String, Object> request) {
-        try {
-            // 1. Récupération des champs généraux
-            String nomProjet = (String) request.get("nomProjet");
-            String selectedType = (String) request.get("selectedType");
-            Map<String, Object> documentWrapper = (Map<String, Object>) request.get("document");
+        List<Map<String, Object>> champs = (List<Map<String, Object>>) request.get("document");
 
-            // 2. Création du projet associé
+        List<Document> documents = new ArrayList<>();
+
+        for (Map<String, Object> champ : champs) {
+            Document doc = new Document();
+
+            doc.setNomDocument((String) champ.get("nomDocument"));
+            doc.setContenuFichier((Byte[]) champ.get("contenuFichier"));
+            doc.setDateDepot(LocalDate.parse((String) champ.get("dateDepot")));
+
+            Map<String, Object> utilisateurMap = (Map<String, Object>) champ.get("utilisateur");
+            Utilisateur user = new Utilisateur();
+            user.setIdUtilisateur(Long.valueOf(utilisateurMap.get("idUtilisateur").toString()));
+            doc.setUtilisateur(user);
+
+            Map<String, Object> projetMap = (Map<String, Object>) champ.get("projet");
             Projet projet = new Projet();
-            projet.setNomProjet(nomProjet);
-            Projet savedProjet = projetService.save(projet);
+            projet.setNomProjet((String) (projetMap.get("nomProjet").toString()));
+            doc.setProjet(projet);
 
-            // 3. Liste finale des documents à sauvegarder
-            List<Document> documents = new ArrayList<>();
-
-            // 4. Parcours dynamique des fichiers du documentWrapper
-            for (Map.Entry<String, Object> entry : documentWrapper.entrySet()) {
-                String documentType = entry.getKey(); // ex: "cahier_charge"
-                Map<String, Object> docMap = (Map<String, Object>) entry.getValue();
-
-                // Vérifie que le document est rempli
-                String nomFichier = (String) docMap.get("nomFichier");
-                String contenuBase64 = (String) docMap.get("contenuFichier");
-
-                if (nomFichier != null && contenuBase64 != null) {
-                    byte[] contenuBytes = Base64.getDecoder().decode(contenuBase64);
-
-                    Document doc = new Document();
-                    doc.setNomDocument(nomFichier);
-                    doc.setContenuFichier(contenuBytes);
-                    doc.setDateDepot(LocalDate.now());
-                    doc.setProjet(savedProjet); // Lien avec le projet
-
-                    documentService.save(doc);
-                    documents.add(doc);
-                }
-            }
-
-            return ResponseEntity.ok(documentService.process_document_request(documents));
-
-        } catch (Exception e) {
-            System.err.println("Erreur : " + e);
-            return ResponseEntity.badRequest().body("Erreur de traitement : " + e.getMessage());
+            documents.add(doc);
         }
+
+        // Traitement via service
+        return ResponseEntity.ok(documentService.process_document_request(documents));
     }
 
     @PutMapping("updated/{id}")
