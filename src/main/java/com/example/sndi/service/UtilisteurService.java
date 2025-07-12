@@ -27,26 +27,30 @@ public class UtilisteurService {
         utilisateur.setPassword(hasPassword);
         return utilisateurRepository.save(utilisateur);
     }
-
     // Mettre à jour un utilisateur
     public User updateUtilisateur(Long id, User utilisateurDetails) {
         Optional<User> optionalUtilisateur = utilisateurRepository.findById(id);
         if (optionalUtilisateur.isPresent()) {
             User utilisateur = optionalUtilisateur.get();
             utilisateur.setName(utilisateurDetails.getName());
-          
+            utilisateur.setPrenom(utilisateurDetails.getPrenom());
             utilisateur.setContact(utilisateurDetails.getContact());
             utilisateur.setUsername(utilisateurDetails.getUsername());
-            utilisateur.setPassword(utilisateurDetails.getPassword());
+
+            // Hacher le mot de passe avant de le sauvegarder
+            if (utilisateurDetails.getPassword() != null && !utilisateurDetails.getPassword().isEmpty()) {
+                utilisateur.setPassword(passwordEncoder.encode(utilisateurDetails.getPassword()));
+            }
+
             utilisateur.setTypeUtilisateur(utilisateurDetails.getTypeUtilisateur());
             utilisateur.setDepartement(utilisateurDetails.getDepartement());
             utilisateur.setRoles(utilisateurDetails.getRoles());
+
             return utilisateurRepository.save(utilisateur);
         } else {
-            return null;  // Lancer une exception ou retourner une valeur appropriée selon votre besoin
+            return null; // Lancer une exception ou retourner une valeur appropriée selon votre besoin
         }
     }
-
     // Récupérer un utilisateur par son ID
     public Optional<User> getUtilisateurById(Long id) {
         return utilisateurRepository.findById(id);

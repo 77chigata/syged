@@ -57,4 +57,5 @@ public class Utilisateur {
     @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL)
     private List<Document> documents = new ArrayList<>();
 
+    
 }
