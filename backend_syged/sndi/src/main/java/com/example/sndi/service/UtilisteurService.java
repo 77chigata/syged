@@ -9,8 +9,6 @@ import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,6 +17,7 @@ import com.example.sndi.model.User;
 
 import com.example.sndi.repository.UtilisateurRepository;
 
+
 @Service
 public class UtilisteurService {
     @Autowired
@@ -26,6 +25,11 @@ public class UtilisteurService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+/* 
+    @PostConstruct
+    public void initializeUserKeys() {
+        attribuerClesATousLesUtilisateurs();
+    } */
 
     // Créer un utilisateur
     private KeyPair generateKeyPair() throws NoSuchAlgorithmException {
@@ -63,6 +67,60 @@ public class UtilisteurService {
 
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Erreur lors de la génération des clés asymétriques", e);
+        }
+    }
+
+    public void attribuerClesATousLesUtilisateurs() {
+        try {
+            // Récupération de tous les utilisateurs
+            List<User> utilisateurs = utilisateurRepository.findAll();
+
+            System.out.println("Début de l'attribution des clés pour " + utilisateurs.size() + " utilisateurs");
+
+            int compteur = 0;
+            int erreurs = 0;
+
+            for (User utilisateur : utilisateurs) {
+                try {
+                    // Vérifier si l'utilisateur a déjà des clés
+                    if (utilisateur.getPublicKey() == null || utilisateur.getPrivateKey() == null) {
+
+                        // Génération de la paire de clés asymétriques
+                        KeyPair keyPair = generateKeyPair();
+                        PublicKey publicKey = keyPair.getPublic();
+                        PrivateKey privateKey = keyPair.getPrivate();
+
+                        // Encodage des clés en Base64 pour stockage
+                        String publicKeyBase64 = encodeKeyToBase64(publicKey.getEncoded());
+                        String privateKeyBase64 = encodeKeyToBase64(privateKey.getEncoded());
+
+                        // Stockage des clés dans l'entité utilisateur
+                        utilisateur.setPublicKey(publicKeyBase64);
+                        utilisateur.setPrivateKey(privateKeyBase64);
+
+                        // Sauvegarde de l'utilisateur
+                        utilisateurRepository.save(utilisateur);
+
+                        compteur++;
+                        System.out.println("Clés attribuées à l'utilisateur: " + utilisateur.getUsername() + " ("
+                                + compteur + "/" + utilisateurs.size() + ")");
+                    } else {
+                        System.out.println("L'utilisateur " + utilisateur.getUsername() + " possède déjà des clés");
+                    }
+
+                } catch (Exception e) {
+                    erreurs++;
+                    System.err.println("Erreur lors de l'attribution des clés pour l'utilisateur "
+                            + utilisateur.getUsername() + ": " + e.getMessage());
+                }
+            }
+
+            System.out
+                    .println("Attribution terminée. " + compteur + " utilisateurs mis à jour, " + erreurs + " erreurs");
+
+        } catch (Exception e) {
+            System.err.println("Erreur globale lors de l'attribution des clés: " + e.getMessage());
+            throw new RuntimeException("Erreur lors de l'attribution des clés à tous les utilisateurs", e);
         }
     }
 

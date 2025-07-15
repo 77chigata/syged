@@ -5,10 +5,15 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.time.LocalDate;
 import java.util.Base64;
-import java.util.Optional;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,6 +21,7 @@ import org.springframework.stereotype.Service;
 import com.example.sndi.model.Document;
 import com.example.sndi.model.Partage;
 import com.example.sndi.model.User;
+import com.example.sndi.repository.DocumentRepository;
 import com.example.sndi.repository.PartageRepository;
 import com.example.sndi.repository.UtilisateurRepository;
 
@@ -25,21 +31,99 @@ public class PartageService {
     private PartageRepository partageRepository;
 
     @Autowired
+    private DocumentRepository documentRepository;
+
+    @Autowired
     private UtilisateurRepository utlisateurRepository;
 
     public Partage save(Partage partage) throws Exception {
 
         Partage docPartage = partage;
-        User userEmett = docPartage.getEmetteur();
+        User userEmett = docPartage.getDestinataire();
         User emetteur = utlisateurRepository.findById(userEmett.getId())
                 .orElseThrow(() -> new Exception("User not found with ID: " + userEmett.getId()));
 
         String clePublic = emetteur.getPublicKey();
         Document document = docPartage.getDocument();
-        docPartage.setDocumentPartage( encryptId(document.getIdDocument(), clePublic));
-
+        docPartage.setDocumentPartage(encryptId(document.getIdDocument(), clePublic));
+        docPartage.setDatePartage(LocalDate.now());
         return partageRepository.save(docPartage);
 
+    }
+
+    public List<Partage> findByDestinataire(Long idDestinataire) throws Exception {
+        List<Partage> partages = partageRepository.findByDestinataireId(idDestinataire);
+        Map<Long, Document> cacheDocumentsDecryptes = new HashMap<>();
+
+        for (Partage partage : partages) {
+            User destinataire = partage.getDestinataire();
+            String privateKey = destinataire.getPrivateKey();
+            Long idDocument = decryptId(partage.getDocumentPartage(), privateKey);
+
+            Document document;
+
+            // Vérifie si le document a déjà été déchiffré
+            if (cacheDocumentsDecryptes.containsKey(idDocument)) {
+                document = cacheDocumentsDecryptes.get(idDocument);
+            } else {
+                document = documentRepository.findById(idDocument)
+                        .orElseThrow(() -> new Exception("Document not found with ID: " + idDocument));
+
+                // Déchiffrer le nom du document
+                document.setNomDocument(decryptText(document.getNomDocument(), document.getClesymetrique()));
+
+                // Déchiffrer le contenu du fichier
+                String encryptedBase64 = Base64.getEncoder().encodeToString(document.getContenuFichier());
+                String decryptedBase64 = decryptText(encryptedBase64, document.getClesymetrique());
+                byte[] originalData = Base64.getDecoder().decode(decryptedBase64);
+                document.setContenuFichier(originalData);
+
+                // Stocke dans le cache
+                cacheDocumentsDecryptes.put(idDocument, document);
+            }
+
+            partage.setDocument(document);
+        }
+
+        return partages;
+
+    }
+
+    public List<Partage> findByEmetteur(Long idEmetteur) throws Exception {
+        List<Partage> partages = partageRepository.findByEmetteurId(idEmetteur);
+        Map<Long, Document> cacheDocumentsDecryptes = new HashMap<>();
+
+        for (Partage partage : partages) {
+            User destinataire = partage.getDestinataire();
+            String privateKey = destinataire.getPrivateKey();
+            Long idDocument = decryptId(partage.getDocumentPartage(), privateKey);
+
+            Document document;
+
+            // Vérifie si le document a déjà été déchiffré
+            if (cacheDocumentsDecryptes.containsKey(idDocument)) {
+                document = cacheDocumentsDecryptes.get(idDocument);
+            } else {
+                document = documentRepository.findById(idDocument)
+                        .orElseThrow(() -> new Exception("Document not found with ID: " + idDocument));
+
+                // Déchiffrer le nom du document
+                document.setNomDocument(decryptText(document.getNomDocument(), document.getClesymetrique()));
+
+                // Déchiffrer le contenu du fichier
+                String encryptedBase64 = Base64.getEncoder().encodeToString(document.getContenuFichier());
+                String decryptedBase64 = decryptText(encryptedBase64, document.getClesymetrique());
+                byte[] originalData = Base64.getDecoder().decode(decryptedBase64);
+                document.setContenuFichier(originalData);
+
+                // Stocke dans le cache
+                cacheDocumentsDecryptes.put(idDocument, document);
+            }
+
+            partage.setDocument(document);
+        }
+
+        return partages;
     }
 
     // Chiffrer l'ID avec la clé publique
@@ -77,5 +161,24 @@ public class PartageService {
 
         String decryptedIdString = new String(decryptedBytes, "UTF-8");
         return Long.parseLong(decryptedIdString);
+    }
+
+    public String decryptText(String encryptedText, String encodedKey) throws Exception {
+        // Décoder la clé Base64
+        byte[] decodedKey = Base64.getDecoder().decode(encodedKey);
+        SecretKey secretKey = new SecretKeySpec(decodedKey, "AES");
+
+        // Créer le cipher
+        Cipher cipher = Cipher.getInstance("AES");
+        cipher.init(Cipher.DECRYPT_MODE, secretKey);
+
+        // Décoder le texte chiffré depuis Base64
+        byte[] encryptedBytes = Base64.getDecoder().decode(encryptedText);
+
+        // Déchiffrer
+        byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
+
+        // Retourner le texte en clair
+        return new String(decryptedBytes, "UTF-8");
     }
 }

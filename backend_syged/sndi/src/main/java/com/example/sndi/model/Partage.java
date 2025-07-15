@@ -1,5 +1,8 @@
 package com.example.sndi.model;
 
+import java.time.LocalDate;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -19,6 +22,8 @@ public class Partage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long codePartage;
 
+    private LocalDate datePartage;
+
     private String message;
 
     @ManyToOne
@@ -29,6 +34,7 @@ public class Partage {
     @JoinColumn(name = "IdEmeteur")
     private User emetteur;
 
+    @Column(name = "document_partage", columnDefinition = "TEXT")
     private String documentPartage;
 
     @Transient
