@@ -35,18 +35,17 @@ public class Document {
 
     private String nomDocument;
 
-    
-   
+    private String clesymetrique;
+
+    @Lob
     @Column
-    private String contenuFichier;
+    private byte[] contenuFichier;
 
     private LocalDate dateDepot;
-    
-  
+
     @ManyToOne
     @JoinColumn(name = "id_utilisateur")
-    private Utilisateur utilisateur;
-
+    private User utilisateur;
 
     @ManyToOne
     @JoinColumn(name = "id_type_document")
@@ -55,7 +54,5 @@ public class Document {
     @ManyToOne
     @JoinColumn(name = "id_projet")
     private Projet projet;
-
-  
 
 }

@@ -8,7 +8,7 @@ import com.example.sndi.model.Document;
 
 public interface DocumentRepository  extends JpaRepository<Document,Long>{
 
-     List<Document> findByUtilisateurIdUtilisateur(Long userId);
+     List<Document> findByUtilisateurId(Long userId);
 
 
 

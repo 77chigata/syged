@@ -6,6 +6,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,7 +14,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Partage {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long codePartage;
@@ -22,14 +23,17 @@ public class Partage {
 
     @ManyToOne
     @JoinColumn(name = "IdDestinataire")
-    private Utilisateur Destinataire;
+    private User destinataire;
 
     @ManyToOne
     @JoinColumn(name = "IdEmeteur")
-    private Utilisateur Emetteur;
+    private User emetteur;
 
+    private String documentPartage;
+
+    @Transient
     @ManyToOne
     @JoinColumn(name = "IdDocument")
     private Document document;
-    
+
 }

@@ -1,5 +1,12 @@
 package com.example.sndi.service;
 
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -9,7 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.sndi.model.User;
-import com.example.sndi.model.Utilisateur;
+
 import com.example.sndi.repository.UtilisateurRepository;
 
 @Service
@@ -17,15 +24,46 @@ public class UtilisteurService {
     @Autowired
     private UtilisateurRepository utilisateurRepository;
 
-        @Autowired
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     // Créer un utilisateur
+    private KeyPair generateKeyPair() throws NoSuchAlgorithmException {
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+        keyPairGenerator.initialize(2048, new SecureRandom());
+        return keyPairGenerator.generateKeyPair();
+    }
+
+    // Convertir une clé en chaîne Base64
+    private String encodeKeyToBase64(byte[] key) {
+        return Base64.getEncoder().encodeToString(key);
+    }
+
     public User createUtilisateur(User utilisateur) {
-       
-        String hasPassword = passwordEncoder.encode(utilisateur.getPassword());
-        utilisateur.setPassword(hasPassword);
-        return utilisateurRepository.save(utilisateur);
+        try {
+            // Hachage du mot de passe
+            String hashedPassword = passwordEncoder.encode(utilisateur.getPassword());
+            utilisateur.setPassword(hashedPassword);
+
+            // Génération de la paire de clés asymétriques
+            KeyPair keyPair = generateKeyPair();
+            PublicKey publicKey = keyPair.getPublic();
+            PrivateKey privateKey = keyPair.getPrivate();
+
+            // Encodage des clés en Base64 pour stockage
+            String publicKeyBase64 = encodeKeyToBase64(publicKey.getEncoded());
+            String privateKeyBase64 = encodeKeyToBase64(privateKey.getEncoded());
+
+            // Stockage des clés dans l'entité utilisateur
+            utilisateur.setPublicKey(publicKeyBase64);
+            utilisateur.setPrivateKey(privateKeyBase64);
+
+            // Sauvegarde de l'utilisateur
+            return utilisateurRepository.save(utilisateur);
+
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Erreur lors de la génération des clés asymétriques", e);
+        }
     }
 
     // Mettre à jour un utilisateur
@@ -34,7 +72,7 @@ public class UtilisteurService {
         if (optionalUtilisateur.isPresent()) {
             User utilisateur = optionalUtilisateur.get();
             utilisateur.setName(utilisateurDetails.getName());
-          
+
             utilisateur.setContact(utilisateurDetails.getContact());
             utilisateur.setUsername(utilisateurDetails.getUsername());
             utilisateur.setPassword(utilisateurDetails.getPassword());
@@ -43,7 +81,7 @@ public class UtilisteurService {
             utilisateur.setRoles(utilisateurDetails.getRoles());
             return utilisateurRepository.save(utilisateur);
         } else {
-            return null;  // Lancer une exception ou retourner une valeur appropriée selon votre besoin
+            return null; // Lancer une exception ou retourner une valeur appropriée selon votre besoin
         }
     }
 
@@ -68,4 +106,3 @@ public class UtilisteurService {
     }
 
 }
-
